@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoryCanvas · AI 视频创作画布 · 无限画布 + 节点式工作流</title>
+<meta name="theme-color" content="#0b0d13">
+<meta name="description" content="StoryCanvas 是一个在线 AI 视频创作画布：把文本、脚本、分镜、图片、视频、音频做成可自由连线的节点，一键跑通「一句话梗概 → 分镜 → 关键帧 → 成片」全流程。纯浏览器运行，无需安装，打开即用。">
+<meta name="keywords" content="AI视频,视频创作,无限画布,节点工作流,分镜脚本,文生图,图生视频,AI配音,StoryCanvas,AI视频制作">
+<meta name="author" content="StoryCanvas">
+<meta name="robots" content="index,follow">
+<meta name="application-name" content="StoryCanvas">
+<link rel="canonical" href="https://storycanvas.app.workbuddy.host/">
+
+<!-- 社交分享卡片 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="StoryCanvas">
+<meta property="og:title" content="StoryCanvas · AI 视频创作画布">
+<meta property="og:description" content="无限画布 + 节点式工作流的 AI 视频创作工具：一句话梗概自动拆分镜、批量生成关键帧、图生视频、AI 配乐配音，时间轴一键预览成片。打开即用。">
+<meta property="og:image" content="https://storycanvas.app.workbuddy.host/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:url" content="https://storycanvas.app.workbuddy.host/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="StoryCanvas · AI 视频创作画布">
+<meta name="twitter:description" content="无限画布 + 节点式工作流的在线 AI 视频创作工具，一句话梗概到成片全流程。">
+<meta name="twitter:image" content="https://storycanvas.app.workbuddy.host/icons/icon-512.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "StoryCanvas",
+  "alternateName": "StoryCanvas AI 视频创作画布",
+  "description": "无限画布 + 节点式工作流的在线 AI 视频创作工具：文本、脚本、分镜、图片、视频、音频节点自由连线，一键跑通从梗概到成片的全流程。",
+  "url": "https://storycanvas.app.workbuddy.host/",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "浏览器 / Windows / macOS / iOS / Android",
+  "inLanguage": "zh-CN",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+  "featureList": [
+    "无限画布与节点式工作流",
+    "AI 自动拆分镜（景别/运镜/时长）",
+    "文生图与图生视频",
+    "AI 配乐与旁白配音",
+    "时间轴成片预览",
+    "素材打包 ZIP / SRT 字幕 / 画布截图导出"
+  ]
+}
+</script>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<noscript>
+  <div style="max-width:640px;margin:14vh auto;padding:32px;text-align:center;color:#e7e9f2;font-family:-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;line-height:1.9">
+    <h1 style="font-size:26px;margin-bottom:12px;background:linear-gradient(90deg,#8b5cf6,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent">StoryCanvas · AI 视频创作画布</h1>
+    <p style="color:#8a90a6;font-size:14px">StoryCanvas 是一个「无限画布 + 节点式工作流」的在线 AI 视频创作工具：把文本、脚本、分镜、图片、视频、音频做成可自由拖拽连线的节点，上游产物自动成为下游输入，一句话梗概可自动拆分镜、批量排出关键帧、图生视频并合成配乐配音，最后在时间轴里一键预览成片。<br><br>这个工具由 JavaScript 驱动，<b>请启用 JavaScript 后再打开本页</b>。</p>
+  </div>
+</noscript>
+
+<div id="app">
+
+  <!-- ============ 顶栏 ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#22d3ee"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="5" width="28" height="22" rx="5" fill="url(#lg)" opacity=".9"/>
+        <path d="M13 11.5 L20 16 L13 20.5 Z" fill="#0b0d13"/>
+      </svg>
+      <div class="brand-txt">
+        <b>StoryCanvas</b>
+        <span>AI 视频创作画布</span>
+      </div>
+    </div>
+
+    <div class="proj">
+      <input id="projName" class="proj-name" value="未命名项目" spellcheck="false">
+      <span id="saveState" class="save-state">已自动保存</span>
+    </div>
+
+    <div class="toolgroup">
+      <button class="tool" id="toolSelect" data-tool="select" title="选择工具 (V)">
+        <svg viewBox="0 0 20 20"><path d="M4 3l11 6-5 1.5L8.5 16z"/></svg>
+      </button>
+      <button class="tool" id="toolPan" data-tool="pan" title="抓手工具 (H) / 空格临时切换">
+        <svg viewBox="0 0 20 20"><path d="M7 9V5.5a1.3 1.3 0 012.6 0V9m0-1.2a1.3 1.3 0 012.6 0V9m0-.8a1.3 1.3 0 012.6 0V9m0 0v3.2A4.8 4.8 0 0110 17a4.8 4.8 0 01-4.8-4.8V8"/></svg>
+      </button>
+      <span class="divider"></span>
+      <button class="tool" id="btnUndo" title="撤销 (Ctrl+Z)">
+        <svg viewBox="0 0 20 20"><path d="M8 5L4 9l4 4M4 9h7a4.2 4.2 0 010 8.4H8"/></svg>
+      </button>
+      <button class="tool" id="btnRedo" title="重做 (Ctrl+Shift+Z)">
+        <svg viewBox="0 0 20 20"><path d="M12 5l4 4-4 4m4-4H9a4.2 4.2 0 000 8.4h3"/></svg>
+      </button>
+      <span class="divider"></span>
+      <button class="tool" id="btnFit" title="适应画布 (F)">
+        <svg viewBox="0 0 20 20"><path d="M4 7V4h3M16 7V4h-3M4 13v3h3m9-3v3h-3"/></svg>
+      </button>
+      <button class="tool" id="btnGrid" title="对齐网格 (Ctrl+')">
+        <svg viewBox="0 0 20 20"><path d="M3 7.5h14M3 12.5h14M7.5 3v14M12.5 3v14"/></svg>
+      </button>
+      <button class="tool" id="btnArrange" title="排列：对齐 / 分布 / 自动整理">
+        <svg viewBox="0 0 20 20"><path d="M3 4v12"/><rect x="6" y="5.5" width="11" height="4" rx="1"/><rect x="6" y="11" width="7" height="4" rx="1"/></svg>
+      </button>
+      <button class="tool" id="btnLock" title="锁定选中节点 (Ctrl+Shift+L)">
+        <svg viewBox="0 0 20 20"><rect x="4.5" y="8.5" width="11" height="8" rx="2"/><path d="M7 8.5V6.6a3 3 0 016 0v1.9"/></svg>
+      </button>
+    </div>
+
+    <div class="grow"></div>
+
+    <div class="toolgroup right">
+      <button class="btn ghost icon" id="btnCmd" title="命令面板 (Ctrl+K)">
+        <svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><path d="M13 13l4 4"/></svg>
+      </button>
+      <button class="btn ghost" id="btnImport" title="导入工程 JSON">导入</button>
+      <button class="btn ghost" id="btnExport" title="导出工程 / 分镜表">导出</button>
+      <button class="btn primary" id="btnRunAll" title="按连线顺序执行整条链路 (Ctrl+Enter)">
+        <svg viewBox="0 0 20 20"><path d="M6 4l10 6-10 6z"/></svg>
+        一键运行
+      </button>
+      <button class="btn ghost icon" id="btnHelp" title="快捷键与帮助 (?)">
+        <svg viewBox="0 0 20 20"><path d="M10 3a7 7 0 100 14 7 7 0 000-14z"/><path d="M8.2 8a1.9 1.9 0 013.4 1.2c0 1.3-1.9 1.4-1.9 2.7"/><circle cx="10" cy="14.2" r=".9" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ 左侧 ============ -->
+  <aside class="leftpanel">
+    <div class="tabs">
+      <button class="tab active" data-tab="nodes">节点</button>
+      <button class="tab" data-tab="models">模型</button>
+      <button class="tab" data-tab="assets">资产</button>
+    </div>
+
+    <div class="tabpane active" data-pane="nodes">
+      <div class="pane-hint">双击画布空白处，或拖拽节点到画布</div>
+      <div id="nodeLib" class="node-lib"></div>
+      <div class="pane-sub">
+        <div class="pane-title">工作流模板</div>
+        <div id="tmplLib" class="tmpl-lib"></div>
+      </div>
+    </div>
+
+    <div class="tabpane" data-pane="models">
+      <div class="pane-hint">模型 Hub · 统一调度</div>
+      <div id="modelHub" class="model-hub"></div>
+      <div class="model-note">
+        当前为<b>本地推理演示引擎</b>：图片由 Canvas 程序化渲染、视频由 WebRTC 实时录制、音频由 WebAudio 合成，全部离线产出真实可播放文件。接入线上模型只需替换 <code>js/gen.js</code> 中的适配器。
+      </div>
+    </div>
+
+    <div class="tabpane" data-pane="assets">
+      <div class="pane-hint">画布内全部生成产物 · 拖拽复用</div>
+      <div id="assetLib" class="asset-lib"></div>
+    </div>
+  </aside>
+
+  <!-- ============ 画布 ============ -->
+  <main class="stage" id="stage">
+    <div class="viewport" id="viewport">
+      <div class="world" id="world">
+        <svg class="edges" id="edges" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+          <g id="edgeLayer"></g>
+          <path id="ghostEdge" class="ghost-edge" d=""></path>
+        </svg>
+        <div class="nodelayer" id="nodelayer"></div>
+      </div>
+      <div class="marquee" id="marquee" hidden></div>
+    </div>
+
+    <div class="empty-hint" id="emptyHint">
+      <b>双击此处</b> 添加第一个节点<br><span>建议从「脚本节点」开始：一句话梗概 → 自动拆镜</span>
+    </div>
+
+    <div class="zoomer">
+      <button class="zbtn" id="zoomOut" title="缩小">−</button>
+      <button class="zbtn wide" id="zoomReset" title="重置为 100%">100%</button>
+      <button class="zbtn" id="zoomIn" title="放大">＋</button>
+    </div>
+
+    <div class="minimap" id="minimap" title="导航图">
+      <canvas id="mapCv" width="220" height="140"></canvas>
+    </div>
+
+    <div class="statbar">
+      节点 <b id="stNodes">0</b> · 连线 <b id="stEdges">0</b> · 产物 <b id="stAssets">0</b>
+    </div>
+  </main>
+
+  <!-- ============ 右侧属性面板 ============ -->
+  <aside class="rightpanel" id="rightpanel">
+    <div class="rp-head">
+      <span id="rpTitle">属性</span>
+      <button class="mini" id="rpClose" title="收起">×</button>
+    </div>
+    <div class="rp-body" id="rpBody"></div>
+  </aside>
+
+  <!-- ============ 底部时间轴 ============ -->
+  <footer class="timeline" id="timeline">
+    <div class="tl-top">
+      <button class="tl-toggle" id="tlToggle" title="展开/收起时间轴">
+        <svg viewBox="0 0 20 20"><path d="M6 8l4 4 4-4"/></svg>
+      </button>
+      <span class="tl-title">时间轴 / 成片预览</span>
+      <div class="tl-ctrl">
+        <button class="tl-btn" id="tlPrev" title="上一段">◀◀</button>
+        <button class="tl-btn play" id="tlPlay" title="播放 (空格外)">▶</button>
+        <button class="tl-btn" id="tlNext" title="下一段">▶▶</button>
+        <span class="tl-time" id="tlTime">00:00 / 00:00</span>
+      </div>
+      <div class="grow"></div>
+      <button class="btn ghost sm" id="tlSync">按画布顺序同步</button>
+      <button class="btn ghost sm" id="tlClear">清空时间轴</button>
+    </div>
+    <div class="tl-body" id="tlBody">
+      <div class="tl-tracks" id="tlTracks"></div>
+      <div class="tl-preview">
+        <video id="tlVideo" playsinline></video>
+        <div class="tl-poster" id="tlPoster">暂无素材<br><span>在时间轴中加入视频节点产物</span></div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ 浮层 ============ -->
+  <div class="ctxmenu" id="ctxmenu" hidden></div>
+  <div class="cmdk" id="cmdk" hidden>
+    <div class="cmdk-panel">
+      <div class="cmdk-head">
+        <svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><path d="M13 13l4 4"/></svg>
+        <input id="cmdkInput" placeholder="输入命令或节点名称…" spellcheck="false" autocomplete="off">
+        <kbd>Esc</kbd>
+      </div>
+      <div class="cmdk-list" id="cmdkList"></div>
+      <div class="cmdk-foot">
+        <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span><span><kbd>Enter</kbd> 执行</span><span id="cmdkCount"></span>
+      </div>
+    </div>
+  </div>
+  <div class="modal-root" id="modalRoot" hidden></div>
+  <div class="toasts" id="toasts"></div>
+  <input type="file" id="filePick" hidden>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/store.js"></script>
+<script src="js/gen.js"></script>
+<script src="js/nodes.js"></script>
+<script src="js/edges.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/inspector.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/exportkit.js"></script>
+<script src="js/app.js"></script>
+<script>
+/* PWA：注册 Service Worker（离线可用 / 可安装到桌面与手机主屏） */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

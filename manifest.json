@@ -1,0 +1,17 @@
+{
+  "name": "StoryCanvas · AI 视频创作画布",
+  "short_name": "StoryCanvas",
+  "description": "无限画布 + 节点式工作流的 AI 视频创作工具：脚本、分镜、图片、视频、音频自由连线成片。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0d13",
+  "theme_color": "#0b0d13",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

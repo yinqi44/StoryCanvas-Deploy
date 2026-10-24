@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# StoryCanvas · AI 视频创作画布
+# 站点结构单一，所有内容均允许抓取
+Sitemap: https://storycanvas.app.workbuddy.host/sitemap.xml
