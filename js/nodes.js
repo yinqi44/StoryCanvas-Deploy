@@ -75,8 +75,28 @@
   function chips(list) {
     return '<div class="n-params">' + list.map((c) => '<span class="chip">' + c[0] + ' <b>' + U.esc(c[1]) + '</b></span>').join('') + '</div>';
   }
+  /* 画面比例全表（与 gen.js RATIOS 对应） */
+  const RATIOS_LIST = [['16:9', '16:9'], ['9:16', '9:16'], ['1:1', '1:1'], ['4:3', '4:3'], ['3:4', '3:4'], ['3:2', '3:2'], ['2:3', '2:3'], ['21:9', '21:9']];
+  /* 节点卡片内的可选项框 */
+  function selChip(label, k, opts, cur) {
+    return '<label class="chip selc">' + label +
+      '<select class="nd-sel nodrag" data-k="' + k + '">' +
+      opts.map((o) => '<option value="' + o[0] + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+      '</select></label>';
+  }
+  /* 参考图区：缩略图 + 加号上传 */
+  function refGrid(n) {
+    const refs = (n.assets || []).filter((a) => a.type === 'image' && a.meta && a.meta.source === 'upload');
+    const tiles = refs.map((a) =>
+      '<span class="ref-tile"><img src="' + a.thumb + '" data-rf="' + a.id + '" alt="">' +
+      '<button class="ref-x nodrag" data-act="rmref" data-rf="' + a.id + '" title="移除">×</button></span>').join('');
+    return '<div class="ref-grid">' + tiles +
+      '<button class="ref-add nodrag" data-act="upload" title="上传参考图"><span>+</span></button></div>' +
+      (refs.length ? '' : '<div class="hintline" style="font-size:10.5px;padding:3px 0 0">可作垫图 / 风格参考，生成时自动融合</div>');
+  }
   function assetGrid(n, opts) {
-    const list = n.assets || [];
+    let list = n.assets || [];
+    if (opts && opts.hideUploads) list = list.filter((a) => !(a.meta && a.meta.source === 'upload'));
     if (!list.length) return '';
     const one = opts && opts.one;
     const acts = '<div class="ai-act">' +
@@ -133,13 +153,15 @@
 
     image: function (n) {
       const d = n.data;
-      const mi = (G.MODELS.image.find((m) => m.id === d.model) || G.MODELS.image[0]);
-      return '<textarea class="nd nodrag" data-k="prompt" rows="3" placeholder="描述画面：主体 + 环境 + 光线 + 镜头…">' + U.esc(d.prompt || '') + '</textarea>' +
-        chips([['模型', mi.name], ['比例', d.ratio], ['数量', d.count], ['风格', d.style]]) +
-        assetGrid(n) +
-        '<button class="n-run nodrag" data-act="gen">' + U.icon('magic') + '生成图片</button>' +
-        '<div class="n-row" style="gap:5px"><button class="n-run sec nodrag" style="flex:1;margin-top:6px" data-act="upload">' + U.icon('upload') + '上传参考</button>' +
-        '<button class="n-run sec nodrag" style="flex:1;margin-top:6px" data-act="tovideo">' + U.icon('video') + '转视频</button></div>';
+      return '<div class="n-sec"><div class="n-sec-t">提示词</div>' +
+        '<textarea class="nd plain nodrag" data-k="prompt" rows="3" placeholder="描述画面：主体 + 环境 + 光线 + 镜头…">' + U.esc(d.prompt || '') + '</textarea></div>' +
+        '<div class="n-sec"><div class="n-sec-t">参考图</div>' + refGrid(n) + '</div>' +
+        '<div class="n-params">' +
+          selChip('比例', 'ratio', RATIOS_LIST, d.ratio) +
+          selChip('数量', 'count', [[1, '1'], [2, '2'], [3, '3'], [4, '4']], d.count || 1) +
+        '</div>' +
+        assetGrid(n, { hideUploads: true }) +
+        '<button class="n-run nodrag" data-act="gen">' + U.icon('magic') + '生成图片</button>';
     },
 
     video: function (n) {
@@ -203,7 +225,7 @@
       '<div class="n-head">' +
       '<span class="n-badge" style="background:' + m.color + '22;color:' + m.color + '">' + U.icon(m.icon) + '</span>' +
       '<span class="n-kind">' + m.name + '</span>' +
-      '<span class="n-title nodrag" contenteditable="true" spellcheck="false" data-k="title">' + U.esc(n.title || autoTitle(n)) + '</span>' +
+      '<span class="n-title">' + U.esc(n.title || autoTitle(n)) + '</span>' +
       '<button class="n-act nodrag" data-act="collapse" title="折叠">' + U.icon(n.collapsed ? 'plus' : 'minus') + '</button>' +
       '<button class="n-act del nodrag" data-act="del" title="删除">' + U.icon('trash') + '</button>' +
       '</div>' +
@@ -257,6 +279,11 @@
 
     el.addEventListener('change', (e) => {
       const t = e.target;
+      if (t.tagName === 'SELECT' && t.dataset.k) {
+        const v = t.dataset.k === 'count' ? parseInt(t.value || '1', 10) : t.value;
+        S.updateData(id, { [t.dataset.k]: v }, { silent: true });
+        return;
+      }
       if (t.dataset.k === 'shotCount') S.updateData(id, { shotCount: U.clamp(parseInt(t.value || '6', 10), 1, 12) }, { silent: true });
     });
 
@@ -290,6 +317,7 @@
       else if (act === 'split') splitShots(id);
       else if (act === 'storyboard') storyboard(id);
       else if (act === 'upload') uploadAsset(id);
+      else if (act === 'rmref') S.removeAsset(id, btn.dataset.rf);
       else if (act === 'tovideo') forkTo(id, 'video');
       else if (act === 'toaudio') forkTo(id, 'audio');
       else if (act === 'playaudio') playAsset(n, n.assets[0]);
@@ -349,10 +377,11 @@
       if (n.type === 'image') {
         const inp = S.resolveInputs(id);
         const prompt = [d.prompt, inp.text].filter(Boolean).join(' ').trim();
-        const ref = inp.images[0];
+        const ownRef = (n.assets || []).find((a) => a.type === 'image' && a.meta && a.meta.source === 'upload');
+        const ref = ownRef || inp.images[0];
         const out = await G.image({
           prompt: prompt || '电影感画面', model: d.model, ratio: d.ratio,
-          count: d.count, style: d.style, seed: d.seed,
+          count: d.count, seed: d.seed,
           refUrl: ref ? ref.url : null, refMode: d.refMode
         }, (p, label) => setProgress(id, p, label));
         out.forEach((a) => S.addAsset(id, a));
