@@ -202,7 +202,7 @@
     </div>
 
     <div class="statbar">
-      节点 <b id="stNodes">0</b> · 连线 <b id="stEdges">0</b> · 产物 <b id="stAssets">0</b>
+      节点 <b id="stNodes">0</b> · 连线 <b id="stEdges">0</b> · 产物 <b id="stAssets">0</b> · <span style="opacity:.45">构建 2026-10-25-b</span>
     </div>
   </main>
 
@@ -275,9 +275,19 @@
 /* PWA：注册 Service Worker（离线可用 / 可安装到桌面与手机主屏） */
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => {
+    const hadSW = !!navigator.serviceWorker.controller; /* 之前就有旧 SW 在管这个页面 */
     navigator.serviceWorker.register('sw.js').catch(() => {});
+    /* 新版 SW 接管旧页面后自动刷新一次，确保代码始终最新（首次安装不触发） */
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing || !hadSW) return;
+      refreshing = true;
+      location.reload();
+    });
   });
 }
+/* 版本标识：右下角可见，便于确认浏览器拿到的是哪个构建 */
+window.STORYCANVAS_BUILD = '2026-10-25-b';
 </script>
 </body>
 </html>
