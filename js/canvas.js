@@ -276,7 +276,22 @@
         return;
       }
 
-      const onDragZone = !e.target.closest('[data-nodrag]');
+      /* 输入区 / 交互区：不启动拖拽、不框选，让光标能正常进入输入框 */
+      const typing = e.target.closest('.nodrag,[data-nodrag],textarea,input,select,[contenteditable="true"]');
+      if (typing) {
+        if (nodeEl && !S.selected.has(nodeEl.dataset.id)) {
+          S.selected.clear();
+          S.selected.add(nodeEl.dataset.id);
+          document.querySelectorAll('.node.selected').forEach((el) => {
+            if (el !== nodeEl) el.classList.remove('selected');
+          });
+          nodeEl.classList.add('selected');
+          if (SF.Inspector && SF.Inspector.render) SF.Inspector.render();
+        }
+        return;
+      }
+
+      const onDragZone = true;
 
       if (nodeEl && onDragZone) {
         const id = nodeEl.dataset.id;

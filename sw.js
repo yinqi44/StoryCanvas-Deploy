@@ -1,10 +1,11 @@
 /* StoryCanvas Service Worker
  * 策略：
  *  - 导航/入口 HTML：network-first（保证线上更新能及时拿到），失败时回落缓存（离线可开）。
- *  - 其余同源静态资源：stale-while-revalidate（先用缓存，后台刷新）。
+ *  - JS / CSS：network-first（代码必须拿到最新版，否则修好的 bug 还是旧的），断网回落缓存。
+ *  - 其余同源静态资源（图标等）：stale-while-revalidate（先用缓存，后台刷新）。
  *  - 跨域请求与 POST 等直接放行。
  */
-const CACHE = 'storycanvas-v2';
+const CACHE = 'storycanvas-v3';
 const SHELL = [
   './',
   './index.html',
@@ -59,6 +60,21 @@ self.addEventListener('fetch', (e) => {
           return res;
         })
         .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  const isCode = /\.(js|css)$/.test(url.pathname);
+
+  if (isCode) {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req))
     );
     return;
   }
