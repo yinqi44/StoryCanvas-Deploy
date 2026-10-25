@@ -39,6 +39,7 @@
       image: (n) => f('画面提示词', '<textarea class="inp" rows="4" data-p="prompt">' + U.esc(n.data.prompt || '') + '</textarea>',
         '主体 + 环境 + 光线 + 镜头语言，越具体越稳') +
       '<div class="grid2">' +
+      f('模型', sel(G.MODELS.image, n.data.model, 'model')) +
       f('画幅', sel([['16:9', '16:9 横'], ['9:16', '9:16 竖'], ['1:1', '1:1 方'], ['4:3', '4:3 横'], ['3:4', '3:4 竖'], ['3:2', '3:2 横'], ['2:3', '2:3 竖'], ['21:9', '21:9 宽银幕']], n.data.ratio, 'ratio')) +
       f('数量', num(n.data.count || 1, 'count', 1, 4, 1)) +
       f('随机种子', num(n.data.seed || 42, 'seed', 1, 99999, 1), '同种子可复现') +

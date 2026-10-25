@@ -655,3 +655,13 @@ textarea.nd::placeholder{color:var(--dim-2)}
 .chip.selc{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .nd-sel{background:transparent;border:0;outline:none;color:#cfd3e0;font-size:10px;font-weight:600;font-family:inherit;cursor:pointer;padding:0 2px}
 .nd-sel option{background:#12151f;color:#dfe2ee}
+
+/* ============ 节点自由缩放 ============ */
+.n-resize{position:absolute;right:1px;bottom:1px;width:15px;height:15px;cursor:nwse-resize;z-index:6;opacity:.45}
+.n-resize:after{content:"";position:absolute;right:3px;bottom:3px;width:7px;height:7px;border-right:2px solid var(--dim);border-bottom:2px solid var(--dim);border-radius:1px}
+.n-resize:hover{opacity:1}
+.n-body{display:flex;flex-direction:column;overflow:auto}
+.n-body>*{flex:none}
+.n-sec{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.n-sec .nd.plain{flex:1 1 auto;min-height:54px}
+.ref-add.sm{width:40px;height:40px;font-size:18px;border-radius:8px}

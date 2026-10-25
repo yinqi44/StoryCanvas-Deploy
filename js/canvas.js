@@ -10,6 +10,7 @@
   let spaceDown = false;
   let clipboard = null;
   let drag = null;      // 节点拖拽
+  let resize = null;    // 节点缩放
   let pan = null;       // 视图平移
   let marq = null;      // 框选
   let link = null;      // 连线
@@ -276,6 +277,19 @@
         return;
       }
 
+      /* 右下角缩放手柄：拖拽调整节点大小 */
+      const rz = e.target.closest('.n-resize');
+      if (rz && nodeEl) {
+        const bodyEl = nodeEl.querySelector('.n-body');
+        resize = {
+          id: nodeEl.dataset.id, sx: e.clientX, sy: e.clientY,
+          k: S.state.view.k, el: nodeEl, bodyEl: bodyEl || null,
+          w0: nodeEl.offsetWidth, h0: bodyEl ? bodyEl.offsetHeight : 0
+        };
+        e.preventDefault();
+        return;
+      }
+
       /* 输入区 / 交互区：不启动拖拽、不框选，让光标能正常进入输入框 */
       const typing = e.target.closest('.nodrag,[data-nodrag],textarea,input,select,[contenteditable="true"]');
       if (typing) {
@@ -331,6 +345,14 @@
 
     /* --- pointermove --- */
     window.addEventListener('pointermove', (e) => {
+      if (resize) {
+        const nw = U.clamp(Math.round(resize.w0 + (e.clientX - resize.sx) / resize.k), 250, 720);
+        const nh = U.clamp(Math.round(resize.h0 + (e.clientY - resize.sy) / resize.k), 100, 900);
+        resize.el.style.width = nw + 'px';
+        if (resize.bodyEl) resize.bodyEl.style.height = nh + 'px';
+        resize.cw = nw; resize.ch = nh;
+        return;
+      }
       if (link) {
         E.moveConnect(toWorld(e.clientX, e.clientY));
         return;
@@ -400,6 +422,12 @@
 
     /* --- pointerup --- */
     window.addEventListener('pointerup', (e) => {
+      if (resize) {
+        if (resize.cw) S.updateNode(resize.id, { w: resize.cw, bodyH: resize.ch }, { silent: true });
+        resize = null;
+        C.render();
+        return;
+      }
       if (link) {
         const port = document.elementFromPoint(e.clientX, e.clientY);
         const portEl = port && port.closest ? port.closest('.port.in') : null;

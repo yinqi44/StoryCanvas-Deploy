@@ -18,7 +18,7 @@
       name: '图片', desc: '文生图 / 图生图', icon: 'image', color: 'var(--c-image)',
       w: 296, portsIn: [{ id: 'prompt', name: '提示词' }, { id: 'ref', name: '参考图' }],
       portsOut: [{ id: 'image', name: '图片' }],
-      make: () => ({ data: { prompt: '', model: 'seedream5', ratio: '16:9', count: 1, style: '电影感', seed: 42, refMode: 'style' } })
+      make: () => ({ data: { prompt: '', model: 'flux', ratio: '16:9', count: 1, seed: 42, refMode: 'style' } })
     },
     video: {
       name: '视频', desc: '图生视频 / 文生视频', icon: 'video', color: 'var(--c-video)',
@@ -84,15 +84,14 @@
       opts.map((o) => '<option value="' + o[0] + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
       '</select></label>';
   }
-  /* 参考图区：缩略图 + 加号上传 */
+  /* 参考图条：缩略图 + 加号上传（并入提示词区） */
   function refGrid(n) {
     const refs = (n.assets || []).filter((a) => a.type === 'image' && a.meta && a.meta.source === 'upload');
     const tiles = refs.map((a) =>
       '<span class="ref-tile"><img src="' + a.thumb + '" data-rf="' + a.id + '" alt="">' +
       '<button class="ref-x nodrag" data-act="rmref" data-rf="' + a.id + '" title="移除">×</button></span>').join('');
     return '<div class="ref-grid">' + tiles +
-      '<button class="ref-add nodrag" data-act="upload" title="上传参考图"><span>+</span></button></div>' +
-      (refs.length ? '' : '<div class="hintline" style="font-size:10.5px;padding:3px 0 0">可作垫图 / 风格参考，生成时自动融合</div>');
+      '<button class="ref-add sm nodrag" data-act="upload" title="上传参考图"><span>+</span></button></div>';
   }
   function assetGrid(n, opts) {
     let list = n.assets || [];
@@ -153,10 +152,12 @@
 
     image: function (n) {
       const d = n.data;
+      const model = G.MODELS.image.some((m) => m.id === d.model) ? d.model : 'flux';
       return '<div class="n-sec"><div class="n-sec-t">提示词</div>' +
-        '<textarea class="nd plain nodrag" data-k="prompt" rows="3" placeholder="描述画面：主体 + 环境 + 光线 + 镜头…">' + U.esc(d.prompt || '') + '</textarea></div>' +
-        '<div class="n-sec"><div class="n-sec-t">参考图</div>' + refGrid(n) + '</div>' +
+        '<textarea class="nd plain nodrag" data-k="prompt" rows="3">' + U.esc(d.prompt || '') + '</textarea>' +
+        refGrid(n) + '</div>' +
         '<div class="n-params">' +
+          selChip('模型', 'model', G.MODELS.image.map((m) => [m.id, m.name]), model) +
           selChip('比例', 'ratio', RATIOS_LIST, d.ratio) +
           selChip('数量', 'count', [[1, '1'], [2, '2'], [3, '3'], [4, '4']], d.count || 1) +
         '</div>' +
@@ -221,6 +222,8 @@
     }
 
     el.style.width = nodeWidth(n) + 'px';
+    /* 标题只在创建时定一次，之后不随提示词变化 */
+    if (!n._titleInit) { n._titleInit = 1; if (!n.title || n.title === '节点') n.title = autoTitle(n); }
     el.innerHTML =
       '<div class="n-head">' +
       '<span class="n-badge" style="background:' + m.color + '22;color:' + m.color + '">' + U.icon(m.icon) + '</span>' +
@@ -229,7 +232,8 @@
       '<button class="n-act nodrag" data-act="collapse" title="折叠">' + U.icon(n.collapsed ? 'plus' : 'minus') + '</button>' +
       '<button class="n-act del nodrag" data-act="del" title="删除">' + U.icon('trash') + '</button>' +
       '</div>' +
-      (n.collapsed ? '' : '<div class="n-body">' + (BODY[n.type] ? BODY[n.type](n) : '') + '</div>') +
+      (n.collapsed ? '' : '<div class="n-body"' + (n.bodyH ? ' style="height:' + n.bodyH + 'px"' : '') + '>' + (BODY[n.type] ? BODY[n.type](n) : '') + '</div>') +
+      (n.collapsed ? '' : '<span class="n-resize nodrag" title="拖拽调整节点大小"></span>') +
       (n.status === 'running' ? '<span class="n-status" data-status>生成中…</span>' : '') +
       (n.status === 'error' ? '<span class="n-status err" data-status>失败</span>' : '');
 
@@ -269,7 +273,6 @@
       const t = e.target;
       if (t.dataset.k && t.tagName === 'TEXTAREA') {
         S.updateData(id, { [t.dataset.k]: t.value }, { silent: true });
-        syncTitle(id);
         return;
       }
       if (t.dataset.k === 'shotCount') {
@@ -467,7 +470,7 @@
         title: ('镜头 ' + s.idx),
         data: {
           prompt: (s.full || s.desc) + '，' + s.size + '，' + s.cam + '，电影感画面',
-          model: 'seedream5', ratio: '16:9', count: 1, style: '电影感', seed: 42 + i * 13, refMode: 'style'
+          model: 'flux', ratio: '16:9', count: 1, seed: 42 + i * 13, refMode: 'style'
         }
       }, { noHistory: true });
       created.push(nn);

@@ -15,10 +15,9 @@
   /* ---------------- 模型注册表（UI 展示 + 参数默认） ---------------- */
   const MODELS = {
     image: [
-      { id: 'seedream5', name: 'Seedream 5.0', tag: '写实', dot: '#34d399' },
-      { id: 'midjourney', name: 'Midjourney V7', tag: '美学', dot: '#a78bfa' },
-      { id: 'flux-pro', name: 'Flux 1.1 Pro', tag: '通用', dot: '#22d3ee' },
-      { id: 'kolors', name: 'Kolors 2.0', tag: '国风', dot: '#fbbf24' }
+      { id: 'flux', name: 'Flux', tag: '云端·写实', dot: '#34d399' },
+      { id: 'turbo', name: 'Turbo', tag: '云端·极速', dot: '#22d3ee' },
+      { id: 'local', name: '本地引擎', tag: '离线兜底', dot: '#a78bfa' }
     ],
     video: [
       { id: 'kling3', name: 'Kling 3.0', tag: '运动', dot: '#22d3ee' },
@@ -420,10 +419,36 @@
   const G = {};
   G.MODELS = MODELS; G.RATIOS = RATIOS; G.STYLES = STYLES; G.CAMERAS = CAMERAS;
 
-  G.image = async function (spec, onProgress) {
+  /* 严格按比例出图：长边固定 1024，短边按比例精确换算 */
+  function dimsFor(ratio) {
+    const R = RATIOS[ratio] || [16, 9];
+    if (R[0] >= R[1]) {
+      return { W: 1024, H: Math.max(256, Math.round(1024 * R[1] / R[0])) };
+    }
+    return { W: Math.max(256, Math.round(1024 * R[0] / R[1])), H: 1024 };
+  }
+
+  async function fetchAsDataURL(url, timeoutMs) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), timeoutMs || 75000);
+    try {
+      const res = await fetch(url, { signal: ctl.signal });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      return await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsDataURL(blob);
+      });
+    } finally { clearTimeout(t); }
+  }
+
+  /* 本地程序化引擎（离线兜底） */
+  G.localImage = async function (spec, onProgress) {
     const n = Math.max(1, Math.min(4, spec.count || 1));
-    const R = RATIOS[spec.ratio] || [16, 9];
-    const W = 768, H = Math.round(W * R[1] / R[0]);
+    const DM = dimsFor(spec.ratio);
+    const W = DM.W, H = DM.H;
     const ref = spec.refUrl ? await loadImage(spec.refUrl) : null;
     const out = [];
     for (let i = 0; i < n; i++) {
@@ -470,6 +495,36 @@
           scene: info.scene, prompt: spec.prompt
         }
       });
+      if (onProgress) onProgress((i + 1) / n, '出图 ' + (i + 1) + '/' + n);
+    }
+    return out;
+  };
+
+  /* 云端生图（Pollinations 免密钥模型），失败自动回落本地引擎 */
+  G.image = async function (spec, onProgress) {
+    if (spec.model === 'local') return G.localImage(spec, onProgress);
+    const model = spec.model === 'turbo' ? 'turbo' : 'flux';
+    const n = Math.max(1, Math.min(4, spec.count || 1));
+    const DM = dimsFor(spec.ratio);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const seed = ((spec.seed || 1) * 1000 + i * 37) % 999983;
+      const q = encodeURIComponent((spec.prompt || 'cinematic scene, high detail') );
+      const url = 'https://image.pollinations.ai/prompt/' + q +
+        '?width=' + DM.W + '&height=' + DM.H + '&seed=' + seed +
+        '&model=' + model + '&nologo=true&safe=true';
+      try {
+        if (onProgress) onProgress((i + 0.15) / n, '云端推理 ' + (i + 1) + '/' + n);
+        const data = await fetchAsDataURL(url);
+        out.push({
+          type: 'image', url: data, thumb: data, w: DM.W, h: DM.H,
+          meta: { model: 'pollinations/' + model, ratio: spec.ratio, seed: seed, remote: true, prompt: spec.prompt }
+        });
+      } catch (e) {
+        if (onProgress) onProgress((i + 0.5) / n, '第 ' + (i + 1) + ' 张云端超时 · 本地兜底');
+        const loc = await G.localImage(Object.assign({}, spec, { count: 1, seed: (spec.seed || 1) + i }), onProgress);
+        out.push(loc[0]);
+      }
       if (onProgress) onProgress((i + 1) / n, '出图 ' + (i + 1) + '/' + n);
     }
     return out;
